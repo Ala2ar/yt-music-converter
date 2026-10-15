@@ -54,13 +54,15 @@ export const TrackCard: React.FC<TrackCardProps> = ({
       // Ignore if canvas is unavailable
     }
 
-    // Direct download trigger with anchor
-    const link = document.createElement("a");
-    link.href = conversionState.downloadUrl;
+    // Clean ad-free same-origin download trigger
     const cleanFilename = `${metadata.artist} - ${metadata.cleanTitle}.${selectedFormat}`;
+    const cleanUrl = `/api/download?url=${encodeURIComponent(
+      conversionState.downloadUrl
+    )}&filename=${encodeURIComponent(cleanFilename)}`;
+
+    const link = document.createElement("a");
+    link.href = cleanUrl;
     link.setAttribute("download", cleanFilename);
-    link.setAttribute("target", "_blank");
-    link.setAttribute("rel", "noopener noreferrer");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

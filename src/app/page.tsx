@@ -128,12 +128,14 @@ export default function Home() {
 
           // Auto trigger download if enabled
           if (autoDownload) {
+            const cleanFilename = `${meta.artist} - ${meta.cleanTitle}.${format}`;
+            const cleanUrl = `/api/download?url=${encodeURIComponent(
+              data.downloadUrl
+            )}&filename=${encodeURIComponent(cleanFilename)}`;
+
             const link = document.createElement("a");
-            link.href = data.downloadUrl;
-            link.setAttribute(
-              "download",
-              `${meta.artist} - ${meta.cleanTitle}.${format}`
-            );
+            link.href = cleanUrl;
+            link.setAttribute("download", cleanFilename);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

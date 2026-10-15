@@ -29,14 +29,14 @@ export const HistoryList: React.FC<HistoryListProps> = ({
 
   const handleDownload = (item: HistoryItem, e: React.MouseEvent) => {
     e.stopPropagation();
+    const cleanFilename = `${item.metadata.artist} - ${item.metadata.cleanTitle}.${item.format}`;
+    const cleanUrl = `/api/download?url=${encodeURIComponent(
+      item.downloadUrl
+    )}&filename=${encodeURIComponent(cleanFilename)}`;
+
     const link = document.createElement("a");
-    link.href = item.downloadUrl;
-    link.setAttribute(
-      "download",
-      `${item.metadata.artist} - ${item.metadata.cleanTitle}.${item.format}`
-    );
-    link.setAttribute("target", "_blank");
-    link.setAttribute("rel", "noopener noreferrer");
+    link.href = cleanUrl;
+    link.setAttribute("download", cleanFilename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
