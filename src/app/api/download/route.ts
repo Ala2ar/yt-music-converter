@@ -24,8 +24,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (!remoteResponse.ok || !remoteResponse.body) {
-      // If direct streaming fails, redirect to the direct URL as a fallback
-      return NextResponse.redirect(targetUrl, 302);
+      return NextResponse.json(
+        { error: `Storage server returned status ${remoteResponse.status}` },
+        { status: 502 }
+      );
     }
 
     const contentType =

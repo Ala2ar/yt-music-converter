@@ -38,34 +38,64 @@ export const TrackCard: React.FC<TrackCardProps> = ({
   conversionState,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  const handleDownload = () => {
-    if (!conversionState.downloadUrl) return;
+  const handleDownload = async () => {
+    if (!conversionState.downloadUrl || isDownloading) return;
 
-    // Trigger confetti celebration
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.7 },
-        colors: ["#a855f7", "#ec4899", "#3b82f6", "#10b981"],
-      });
-    } catch {
-      // Ignore if canvas is unavailable
-    }
+    setIsDownloading(true);
+    setDownloadError(null);
 
-    // Clean ad-free same-origin download trigger
     const cleanFilename = `${metadata.artist} - ${metadata.cleanTitle}.${selectedFormat}`;
     const cleanUrl = `/api/download?url=${encodeURIComponent(
       conversionState.downloadUrl
     )}&filename=${encodeURIComponent(cleanFilename)}`;
 
-    const link = document.createElement("a");
-    link.href = cleanUrl;
-    link.setAttribute("download", cleanFilename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // 1. Fetch binary audio stream in background via clean same-origin proxy
+      const res = await fetch(cleanUrl);
+      if (!res.ok) {
+        throw new Error(`Download server error (${res.status})`);
+      }
+
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // 2. Trigger native direct file download (same-origin blob URL)
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = cleanFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // 3. Clean up memory
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+
+      // 4. Confetti celebration
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.7 },
+          colors: ["#a855f7", "#ec4899", "#3b82f6", "#10b981"],
+        });
+      } catch {
+        // Ignore if canvas is unavailable
+      }
+    } catch (err: unknown) {
+      console.warn("Direct blob save fallback:", err);
+      // Fallback: browser same-origin download (never visits ad network)
+      const link = document.createElement("a");
+      link.href = cleanUrl;
+      link.setAttribute("download", cleanFilename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleShare = async () => {
@@ -217,13 +247,23 @@ export const TrackCard: React.FC<TrackCardProps> = ({
               <button
                 type="button"
                 onClick={handleDownload}
-                className="w-full sm:flex-1 py-4 px-6 rounded-2xl font-bold text-base text-white bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 flex items-center justify-center gap-3 transition-all duration-200 active:scale-[0.98]"
+                disabled={isDownloading}
+                className="w-full sm:flex-1 py-4 px-6 rounded-2xl font-bold text-base text-white bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 disabled:opacity-75 disabled:cursor-wait shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 flex items-center justify-center gap-3 transition-all duration-200 active:scale-[0.98]"
               >
-                <Download className="w-5 h-5" />
-                <span>
-                  Download {currentFormatObj.label} ({currentFormatObj.bitrate})
-                </span>
-                <Sparkles className="w-4 h-4 text-emerald-200" />
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Saving Audio Track...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5" />
+                    <span>
+                      Download {currentFormatObj.label} ({currentFormatObj.bitrate})
+                    </span>
+                    <Sparkles className="w-4 h-4 text-emerald-200" />
+                  </>
+                )}
               </button>
 
               <button

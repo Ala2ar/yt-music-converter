@@ -27,12 +27,30 @@ export const HistoryList: React.FC<HistoryListProps> = ({
     return null;
   }
 
-  const handleDownload = (item: HistoryItem, e: React.MouseEvent) => {
+  const handleDownload = async (item: HistoryItem, e: React.MouseEvent) => {
     e.stopPropagation();
     const cleanFilename = `${item.metadata.artist} - ${item.metadata.cleanTitle}.${item.format}`;
     const cleanUrl = `/api/download?url=${encodeURIComponent(
       item.downloadUrl
     )}&filename=${encodeURIComponent(cleanFilename)}`;
+
+    try {
+      const res = await fetch(cleanUrl);
+      if (res.ok) {
+        const blob = await res.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = cleanFilename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+        return;
+      }
+    } catch {
+      // fallback
+    }
 
     const link = document.createElement("a");
     link.href = cleanUrl;
