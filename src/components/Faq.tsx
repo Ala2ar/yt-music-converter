@@ -16,8 +16,8 @@ export const Faq: React.FC = () => {
       a: "You can convert and download audio in MP3 (up to 320 kbps high quality), M4A / AAC (256 kbps, optimized for Apple devices), lossless FLAC (for audiophile fidelity), and studio WAV.",
     },
     {
-      q: "How does this run on Vercel without hitting execution or size limits?",
-      a: "Vercel serverless functions enforce a 4.5 MB response payload limit and a 10-60 second timeout. SoundRip solves this by orchestrating asynchronous audio extraction and conversion jobs, polling for job completion, and providing direct streaming URLs, ensuring 100% compliance with Vercel's serverless limits.",
+      q: "Can I use this as a Telegram Mini App inside Telegram?",
+      a: "Yes! SoundRip is fully optimized as a Telegram Mini App. You can connect it to any Telegram bot using @BotFather (via /newapp or /setmenubutton). It opens seamlessly inside Telegram with full native styling, haptic feedback, and in-app music playback.",
     },
     {
       q: "Where are downloaded files saved?",

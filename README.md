@@ -1,6 +1,6 @@
 # 🎵 SoundRip - YouTube & YouTube Music Audio Downloader
 
-> A fast, modern YouTube & YouTube Music to audio converter and downloadable system, built with Next.js 15, React 19, and Tailwind CSS. Specially engineered to deploy and run seamlessly on **Vercel Serverless**.
+> A fast, modern YouTube & YouTube Music to audio converter and downloadable system, built with Next.js 15, React 19, and Tailwind CSS. Featuring native **Telegram Mini App** integration and a clean, 100% ad-free experience.
 
 ![SoundRip Preview](https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg)
 
@@ -9,16 +9,43 @@
 ## ✨ Features
 
 - 🎧 **YouTube & YouTube Music Support**: Accepts standard `youtube.com/watch?v=...`, `music.youtube.com/watch?v=...`, `youtu.be/...`, and YouTube Shorts.
+- 📱 **Telegram Mini App (TMA) Ready**: Runs directly inside Telegram chats with theme detection, native haptic vibrations, and instant music sharing.
 - 🔊 **Studio Bitrate & Formats**:
   - **MP3 (320 kbps)** - High-fidelity universal audio
   - **M4A / AAC (256 kbps)** - Apple-optimized crisp high frequency
   - **FLAC** - Lossless audiophile playback
   - **WAV** - Uncompressed studio waveform
 - ⏯️ **In-Browser Audio Preview**: Listen to and scrub through the converted track directly before downloading, with an interactive animated equalizer.
-- 💾 **One-Click Download**: Automatically formats ID3 filenames (`Artist - Title.mp3`) and triggers direct browser downloads.
+- 💾 **One-Click Ad-Free Download**: In-memory blob downloader saves files directly to your device with proper ID3 tags (`Artist - Title.mp3`) without popup ads.
 - 🕒 **Conversion History**: Automatically saves your recently converted tracks to local storage for instant re-download or listening.
-- ⚡ **Vercel Serverless Optimized**: Bypasses the 4.5 MB Lambda response size limit and function timeouts through asynchronous conversion polling and streaming URLs.
-- 🛡️ **Clean & Ad-Free**: No popups, no scam redirects, no account registration required.
+- 🛡️ **Clean & Zero Ads**: No popups, no scam redirects, no account registration required.
+
+---
+
+## 📱 How to Use as a Telegram Mini App
+
+You can run this application as a native **Telegram Mini App** inside any Telegram bot!
+
+### Step 1: Deploy the App
+Deploy this repository to your preferred hosting provider (Vercel, Railway, Render, or your own server) to get a public HTTPS URL (e.g. `https://your-soundrip.vercel.app`).
+
+### Step 2: Open @BotFather on Telegram
+1. Search for [`@BotFather`](https://t.me/BotFather) in Telegram.
+2. If you don't have a bot yet, send `/newbot` and follow the instructions to create one.
+
+### Step 3: Configure the Mini App (Menu Button)
+1. Send `/setmenubutton` to `@BotFather`.
+2. Select your bot.
+3. Send the public HTTPS URL of your deployed app (e.g., `https://your-soundrip.vercel.app`).
+4. Set the button title to: `🎵 Audio Downloader` (or `SoundRip`).
+
+### Step 4 (Optional): Create a Named Web App Link
+1. Send `/newapp` to `@BotFather`.
+2. Select your bot and provide a title, description, and photo.
+3. When prompted for the Web App URL, paste your deployed URL.
+4. Set a short name (e.g. `music`). You will receive a direct link: `t.me/YourBotName/music`.
+
+Now, users can open the converter right inside Telegram, convert songs, listen to audio, and download tracks with native haptic feedback!
 
 ---
 
@@ -26,7 +53,7 @@
 
 ### 1. Clone or Open the Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Ala2ar/yt-music-converter.git
 cd yt-music-converter
 ```
 
@@ -41,41 +68,6 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 🌐 Deploy to Vercel (Live in 2 Minutes)
-
-### Option A: Deploy via Vercel CLI (Fastest)
-
-Run the following in the project directory:
-
-```bash
-npx vercel
-```
-
-- When asked `Set up and deploy?`, press `y`.
-- Accept the default project name and settings.
-- To deploy directly to production, run:
-```bash
-npx vercel --prod
-```
-
-### Option B: Deploy via GitHub (Continuous Deployment)
-
-1. Push this repository to your GitHub account:
-```bash
-git add .
-git commit -m "Initial commit of SoundRip YouTube Music Audio Downloader"
-git remote add origin https://github.com/<your-username>/<your-repo-name>.git
-git branch -M main
-git push -u origin main
-```
-
-2. Visit [Vercel Dashboard](https://vercel.com/new).
-3. Click **"Import"** next to your GitHub repository.
-4. Keep the default Next.js build settings and click **"Deploy"**.
-5. Your converter will be live at `https://<your-project>.vercel.app`!
 
 ---
 
@@ -99,11 +91,12 @@ yt-music-converter/
 │   ├── app/
 │   │   ├── api/
 │   │   │   ├── convert/route.ts   # Audio conversion initiator
+│   │   │   ├── download/route.ts  # Clean ad-free streaming download proxy
 │   │   │   ├── info/route.ts      # Video metadata & thumbnail resolver
 │   │   │   └── progress/route.ts  # Conversion job status poller
 │   │   ├── globals.css            # Dark glassmorphic theme & audio animations
-│   │   ├── layout.tsx             # Root layout with responsive mesh gradient
-│   │   └── page.tsx               # Converter UI, state management & audio player
+│   │   ├── layout.tsx             # Root layout with Telegram WebApp SDK
+│   │   └── page.tsx               # Converter UI, Telegram integration & player
 │   ├── components/
 │   │   ├── AudioPlayer.tsx        # HTML5 preview player with visualizer
 │   │   ├── Faq.tsx                # Frequently asked questions accordion
@@ -113,9 +106,11 @@ yt-music-converter/
 │   │   ├── SettingsModal.tsx      # Format & API preferences modal
 │   │   ├── TrackCard.tsx          # Artwork, format selector, progress & download
 │   │   └── UrlInput.tsx           # Smart link input & clipboard paste
-│   └── lib/
-│       └── youtube.ts             # Link parser, validator, ID extractor & title cleaner
-├── vercel.json                    # Vercel serverless function timeouts & CORS rules
+│   ├── lib/
+│   │   ├── telegram.ts            # Telegram WebApp lifecycle, haptics & sharing
+│   │   └── youtube.ts             # Link parser, validator, ID extractor & title cleaner
+│   └── types/
+│       └── telegram.d.ts          # Telegram WebApp TypeScript declarations
 ├── tailwind.config.ts             # Custom colors, keyframes, audio bars
 ├── tsconfig.json                  # TypeScript compiler settings
 └── package.json                   # Dependencies & scripts

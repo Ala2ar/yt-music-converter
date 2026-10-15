@@ -1,5 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: "SoundRip - Fast YouTube & YouTube Music Audio Downloader",
@@ -29,6 +37,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className="min-h-screen bg-[#090a10] text-gray-100 antialiased selection:bg-purple-600 selection:text-white">
         <div className="fixed inset-0 bg-grid-pattern opacity-40 pointer-events-none z-0" />
         <div className="fixed -top-40 -left-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none z-0" />

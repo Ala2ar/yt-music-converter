@@ -9,6 +9,7 @@ import {
   Zap,
   Radio,
   DownloadCloud,
+  Send,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { UrlInput } from "@/components/UrlInput";
@@ -18,6 +19,7 @@ import { Features } from "@/components/Features";
 import { Faq } from "@/components/Faq";
 import { SettingsModal } from "@/components/SettingsModal";
 import { VideoMetadata, extractVideoId } from "@/lib/youtube";
+import { initTelegramApp, triggerHaptic, isRunningInTelegram } from "@/lib/telegram";
 
 export default function Home() {
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
@@ -41,11 +43,21 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [autoDownload, setAutoDownload] = useState(false);
+  const [telegramUser, setTelegramUser] = useState<string | null>(null);
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load preferences and history from localStorage
+  // Initialize Telegram WebApp and load preferences
   useEffect(() => {
+    try {
+      const tg = initTelegramApp();
+      if (tg?.initDataUnsafe?.user?.first_name) {
+        setTelegramUser(tg.initDataUnsafe.user.first_name);
+      }
+    } catch {
+      // Not in telegram
+    }
+
     try {
       const savedHistory = localStorage.getItem("soundrip_history");
       if (savedHistory) setHistory(JSON.parse(savedHistory));
@@ -321,6 +333,14 @@ export default function Home() {
             AAC, or FLAC directly to your device.
           </p>
 
+          {/* Telegram Greeting Badge */}
+          {telegramUser && (
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/15 border border-sky-500/30 text-sky-300 text-xs font-semibold mb-4 animate-fadeIn">
+              <Send className="w-3.5 h-3.5 text-sky-400" />
+              <span>Telegram Mini App Active • Welcome, {telegramUser}!</span>
+            </div>
+          )}
+
           {/* Badges */}
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-gray-400 mb-8">
             <span className="flex items-center gap-1.5">
@@ -330,7 +350,7 @@ export default function Home() {
               <CheckCircle2 className="w-4 h-4 text-pink-400" /> 320 kbps Studio MP3
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Vercel Serverless Ready
+              <Send className="w-4 h-4 text-sky-400" /> Telegram Mini App Ready
             </span>
           </div>
 
@@ -384,14 +404,10 @@ export default function Home() {
             >
               Settings
             </button>
-            <a
-              href="https://vercel.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-white transition-colors"
-            >
-              Deploy to Vercel
-            </a>
+            <span className="flex items-center gap-1.5 text-sky-400">
+              <Send className="w-3.5 h-3.5" />
+              Telegram Bot Ready
+            </span>
           </div>
         </div>
       </footer>

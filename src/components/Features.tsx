@@ -10,6 +10,7 @@ import {
   Smartphone,
   Sliders,
   CheckCircle,
+  Send,
 } from "lucide-react";
 
 export const Features: React.FC = () => {
@@ -36,11 +37,11 @@ export const Features: React.FC = () => {
       color: "from-amber-500 to-orange-500",
     },
     {
-      icon: Cloud,
-      title: "Vercel Serverless Engine",
+      icon: Send,
+      title: "Telegram Mini App Ready",
       description:
-        "Architected specifically to bypass 4.5MB Vercel payload limits through asynchronous streaming jobs.",
-      color: "from-emerald-500 to-teal-500",
+        "Runs natively inside Telegram chats with dynamic theme matching, haptic vibrations, and instant sharing.",
+      color: "from-sky-500 to-blue-600",
     },
     {
       icon: Shield,

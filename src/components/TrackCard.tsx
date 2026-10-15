@@ -11,10 +11,12 @@ import {
   Loader2,
   Sparkles,
   Share2,
+  Send,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { VideoMetadata, AUDIO_FORMATS, AudioFormatOption } from "@/lib/youtube";
 import { AudioPlayer } from "./AudioPlayer";
+import { triggerHaptic, shareToTelegram, isRunningInTelegram } from "@/lib/telegram";
 
 interface TrackCardProps {
   metadata: VideoMetadata;
@@ -46,6 +48,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
 
     setIsDownloading(true);
     setDownloadError(null);
+    triggerHaptic("medium");
 
     const cleanFilename = `${metadata.artist} - ${metadata.cleanTitle}.${selectedFormat}`;
     const cleanUrl = `/api/download?url=${encodeURIComponent(
@@ -72,6 +75,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
 
       // 3. Clean up memory
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+      triggerHaptic("success");
 
       // 4. Confetti celebration
       try {
@@ -99,6 +103,15 @@ export const TrackCard: React.FC<TrackCardProps> = ({
   };
 
   const handleShare = async () => {
+    triggerHaptic("light");
+    if (isRunningInTelegram()) {
+      shareToTelegram(
+        metadata.url,
+        `🎵 Check out "${metadata.cleanTitle}" by ${metadata.artist} on SoundRip!`
+      );
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(metadata.url);
       setCopied(true);
@@ -184,6 +197,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
                     type="button"
                     disabled={conversionState.isConverting}
                     onClick={() => {
+                      triggerHaptic("light");
                       onFormatChange(format.id);
                       if (conversionState.downloadUrl) {
                         onStartConversion(format.id);

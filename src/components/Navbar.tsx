@@ -100,9 +100,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             </svg>
           </a>
 
-          <div className="hidden sm:flex items-center gap-1 text-[11px] font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2.5 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Vercel Live
+            100% Ad-Free
           </div>
         </div>
       </div>
