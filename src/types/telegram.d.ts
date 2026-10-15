@@ -68,7 +68,11 @@ export interface TelegramWebApp {
   setHeaderColor: (color: string) => void;
   setBackgroundColor: (color: string) => void;
   enableClosingConfirmation: () => void;
-  disableClosingConfirmation: () => void;
+  isVersionAtLeast?: (version: string) => boolean;
+  downloadFile?: (
+    params: { url: string; file_name: string },
+    callback?: (isDownloading: boolean) => void
+  ) => void;
   openLink: (url: string, options?: { try_instant_view?: boolean }) => void;
   openTelegramLink: (url: string) => void;
 }

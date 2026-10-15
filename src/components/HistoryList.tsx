@@ -3,6 +3,7 @@
 import React from "react";
 import { History, Download, Trash2, ExternalLink, Music } from "lucide-react";
 import { VideoMetadata } from "@/lib/youtube";
+import { downloadAudioFile, triggerHaptic } from "@/lib/telegram";
 
 export interface HistoryItem {
   id: string;
@@ -29,35 +30,13 @@ export const HistoryList: React.FC<HistoryListProps> = ({
 
   const handleDownload = async (item: HistoryItem, e: React.MouseEvent) => {
     e.stopPropagation();
+    triggerHaptic("medium");
     const cleanFilename = `${item.metadata.artist} - ${item.metadata.cleanTitle}.${item.format}`;
-    const cleanUrl = `/api/download?url=${encodeURIComponent(
-      item.downloadUrl
-    )}&filename=${encodeURIComponent(cleanFilename)}`;
-
-    try {
-      const res = await fetch(cleanUrl);
-      if (res.ok) {
-        const blob = await res.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = cleanFilename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-        return;
-      }
-    } catch {
-      // fallback
-    }
-
-    const link = document.createElement("a");
-    link.href = cleanUrl;
-    link.setAttribute("download", cleanFilename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    await downloadAudioFile({
+      directUrl: item.downloadUrl,
+      cleanFilename,
+    });
+    triggerHaptic("success");
   };
 
   return (

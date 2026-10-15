@@ -19,7 +19,12 @@ import { Features } from "@/components/Features";
 import { Faq } from "@/components/Faq";
 import { SettingsModal } from "@/components/SettingsModal";
 import { VideoMetadata, extractVideoId } from "@/lib/youtube";
-import { initTelegramApp, triggerHaptic, isRunningInTelegram } from "@/lib/telegram";
+import {
+  initTelegramApp,
+  triggerHaptic,
+  isRunningInTelegram,
+  downloadAudioFile,
+} from "@/lib/telegram";
 
 export default function Home() {
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
@@ -141,16 +146,10 @@ export default function Home() {
           // Auto trigger download if enabled
           if (autoDownload) {
             const cleanFilename = `${meta.artist} - ${meta.cleanTitle}.${format}`;
-            const cleanUrl = `/api/download?url=${encodeURIComponent(
-              data.downloadUrl
-            )}&filename=${encodeURIComponent(cleanFilename)}`;
-
-            const link = document.createElement("a");
-            link.href = cleanUrl;
-            link.setAttribute("download", cleanFilename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            downloadAudioFile({
+              directUrl: data.downloadUrl,
+              cleanFilename,
+            });
           }
         } else {
           setConversionState((prev) => ({

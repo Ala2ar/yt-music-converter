@@ -16,7 +16,12 @@ import {
 import confetti from "canvas-confetti";
 import { VideoMetadata, AUDIO_FORMATS, AudioFormatOption } from "@/lib/youtube";
 import { AudioPlayer } from "./AudioPlayer";
-import { triggerHaptic, shareToTelegram, isRunningInTelegram } from "@/lib/telegram";
+import {
+  triggerHaptic,
+  shareToTelegram,
+  isRunningInTelegram,
+  downloadAudioFile,
+} from "@/lib/telegram";
 
 interface TrackCardProps {
   metadata: VideoMetadata;
@@ -51,33 +56,16 @@ export const TrackCard: React.FC<TrackCardProps> = ({
     triggerHaptic("medium");
 
     const cleanFilename = `${metadata.artist} - ${metadata.cleanTitle}.${selectedFormat}`;
-    const cleanUrl = `/api/download?url=${encodeURIComponent(
-      conversionState.downloadUrl
-    )}&filename=${encodeURIComponent(cleanFilename)}`;
 
     try {
-      // 1. Fetch binary audio stream in background via clean same-origin proxy
-      const res = await fetch(cleanUrl);
-      if (!res.ok) {
-        throw new Error(`Download server error (${res.status})`);
-      }
+      await downloadAudioFile({
+        directUrl: conversionState.downloadUrl,
+        cleanFilename: cleanFilename,
+      });
 
-      const blob = await res.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      // 2. Trigger native direct file download (same-origin blob URL)
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = cleanFilename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // 3. Clean up memory
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
       triggerHaptic("success");
 
-      // 4. Confetti celebration
+      // Confetti celebration
       try {
         confetti({
           particleCount: 80,
@@ -89,14 +77,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
         // Ignore if canvas is unavailable
       }
     } catch (err: unknown) {
-      console.warn("Direct blob save fallback:", err);
-      // Fallback: browser same-origin download (never visits ad network)
-      const link = document.createElement("a");
-      link.href = cleanUrl;
-      link.setAttribute("download", cleanFilename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      console.warn("Download error:", err);
     } finally {
       setIsDownloading(false);
     }
