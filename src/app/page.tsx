@@ -47,6 +47,7 @@ export default function Home() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
+  const [backendUrl, setBackendUrl] = useState("");
   const [autoDownload, setAutoDownload] = useState(false);
   const [telegramUser, setTelegramUser] = useState<string | null>(null);
 
@@ -73,6 +74,9 @@ export default function Home() {
       const savedApiKey = localStorage.getItem("soundrip_api_key");
       if (savedApiKey) setApiKey(savedApiKey);
 
+      const savedBackend = localStorage.getItem("soundrip_backend_url");
+      if (savedBackend) setBackendUrl(savedBackend);
+
       const savedAutoDl = localStorage.getItem("soundrip_auto_download");
       if (savedAutoDl) setAutoDownload(savedAutoDl === "true");
     } catch {
@@ -83,6 +87,7 @@ export default function Home() {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, []);
+
 
   const saveHistory = (item: HistoryItem) => {
     setHistory((prev) => {
@@ -193,8 +198,10 @@ export default function Home() {
           id: meta.id,
           format: format,
           apiKey: apiKey || undefined,
+          backendUrl: backendUrl || undefined,
         }),
       });
+
 
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -434,6 +441,15 @@ export default function Home() {
             // ignore
           }
         }}
+        backendUrl={backendUrl}
+        onSaveBackendUrl={(url) => {
+          setBackendUrl(url);
+          try {
+            localStorage.setItem("soundrip_backend_url", url);
+          } catch {
+            // ignore
+          }
+        }}
         autoDownload={autoDownload}
         onToggleAutoDownload={(val) => {
           setAutoDownload(val);
@@ -444,6 +460,7 @@ export default function Home() {
           }
         }}
       />
+
     </div>
   );
 }

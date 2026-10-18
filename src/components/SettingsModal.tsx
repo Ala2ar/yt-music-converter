@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Key, Check, Sliders, ShieldCheck } from "lucide-react";
+import { X, Key, Check, Sliders, ShieldCheck, Server } from "lucide-react";
 import { AUDIO_FORMATS } from "@/lib/youtube";
 
 interface SettingsModalProps {
@@ -11,6 +11,8 @@ interface SettingsModalProps {
   onSaveDefaultFormat: (format: string) => void;
   apiKey: string;
   onSaveApiKey: (key: string) => void;
+  backendUrl: string;
+  onSaveBackendUrl: (url: string) => void;
   autoDownload: boolean;
   onToggleAutoDownload: (val: boolean) => void;
 }
@@ -22,24 +24,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onSaveDefaultFormat,
   apiKey,
   onSaveApiKey,
+  backendUrl,
+  onSaveBackendUrl,
   autoDownload,
   onToggleAutoDownload,
 }) => {
   const [keyInput, setKeyInput] = useState(apiKey);
+  const [backendInput, setBackendInput] = useState(backendUrl);
   const [selectedFormat, setSelectedFormat] = useState(defaultFormat);
   const [autoDl, setAutoDl] = useState(autoDownload);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setKeyInput(apiKey);
+    setBackendInput(backendUrl);
     setSelectedFormat(defaultFormat);
     setAutoDl(autoDownload);
-  }, [apiKey, defaultFormat, autoDownload, isOpen]);
+  }, [apiKey, backendUrl, defaultFormat, autoDownload, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
     onSaveApiKey(keyInput.trim());
+    onSaveBackendUrl(backendInput.trim());
     onSaveDefaultFormat(selectedFormat);
     onToggleAutoDownload(autoDl);
     setSaved(true);
@@ -48,6 +55,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       onClose();
     }, 800);
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
@@ -113,6 +121,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
           </div>
 
+          {/* Private Backend Engine URL */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Server className="w-3.5 h-3.5 text-cyan-400" />
+                Private Backend Engine URL (100% Ad-Free)
+              </label>
+              {backendInput ? (
+                <span className="text-[10px] text-cyan-400 font-semibold">Configured</span>
+              ) : (
+                <span className="text-[10px] text-gray-400">Optional</span>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 mb-2">
+              Connect your private self-hosted converter (e.g. Koyeb, Render, Hugging Face, or localhost) for 100% permanent, ad-free downloads.
+            </p>
+            <input
+              type="text"
+              value={backendInput}
+              onChange={(e) => setBackendInput(e.target.value)}
+              placeholder="e.g. https://your-backend.koyeb.app or http://localhost:8080"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-gray-500 text-xs focus:outline-none focus:border-cyan-500 font-mono"
+            />
+          </div>
+
           {/* Optional RapidAPI Key */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -126,7 +159,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </span>
             </div>
             <p className="text-xs text-gray-400 mb-2">
-              SoundRip includes a built-in high-speed conversion engine. You can optionally supply your own RapidAPI key for dedicated rate limits.
+              SoundRip includes a built-in conversion engine. You can optionally supply your own RapidAPI key for dedicated rate limits.
             </p>
             <input
               type="password"
@@ -137,6 +170,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             />
           </div>
         </div>
+
 
         {/* Modal actions */}
         <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10">

@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+storage/
+*.mp3
+*.webm
+*.m4a
+.git
+.gitignore

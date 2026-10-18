@@ -25,7 +25,46 @@ export async function POST(request: NextRequest) {
     const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
     const selectedFormat = format.toLowerCase();
 
-    // Check if user or environment configured RapidAPI
+    // 1. Check if user or environment configured a dedicated Private Converter Backend
+    const backendEngineUrl = (
+      body.backendUrl ||
+      process.env.CONVERTER_BACKEND_URL ||
+      process.env.NEXT_PUBLIC_CONVERTER_BACKEND_URL ||
+      ""
+    ).replace(/\/+$/, "");
+
+    if (backendEngineUrl) {
+      try {
+        const backendRes = await fetch(`${backendEngineUrl}/convert`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: videoId,
+            url: youtubeUrl,
+            format: selectedFormat,
+          }),
+        });
+
+        if (backendRes.ok) {
+          const backendData = await backendRes.json();
+          if (backendData.downloadUrl) {
+            return NextResponse.json({
+              success: true,
+              completed: true,
+              downloadUrl: backendData.downloadUrl,
+              title: backendData.title || "Audio Track",
+              artist: backendData.artist || "Artist",
+              format: selectedFormat,
+              progress: 100,
+            });
+          }
+        }
+      } catch (backendErr) {
+        console.warn("Private backend engine error:", backendErr);
+      }
+    }
+
+    // 2. Check if user or environment configured RapidAPI
     const rapidKey = apiKey || process.env.RAPIDAPI_KEY;
     if (rapidKey) {
       try {
@@ -56,7 +95,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // High-speed universal conversion engine
+    // 3. High-speed universal conversion engine
+
     const apiUrl = `https://loader.to/ajax/download.php?format=${selectedFormat}&url=${encodeURIComponent(
       youtubeUrl
     )}`;

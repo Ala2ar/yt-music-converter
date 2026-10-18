@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: yt-audio-converter-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 8080
