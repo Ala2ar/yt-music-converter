@@ -92,10 +92,14 @@ export const TrackCard: React.FC<TrackCardProps> = ({
       setTimeout(() => {
         onStartConversion(selectedFormat);
       }, 1000);
-    } finally {
       setIsDownloading(false);
+    } finally {
+      setTimeout(() => {
+        setIsDownloading(false);
+      }, 1200);
     }
   };
+
 
 
   const handleShare = async () => {

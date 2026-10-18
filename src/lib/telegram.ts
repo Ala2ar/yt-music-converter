@@ -65,7 +65,7 @@ export function shareToTelegram(url: string, text: string) {
 
 /**
  * Downloads audio file cleanly across both Telegram Mini App and standard web browsers.
- * Eliminates truncated/962-byte error files and avoids third-party ad popups.
+ * Eliminates 962-byte Vercel serverless errors, bypasses CORS, and avoids third-party ad popups.
  */
 export async function downloadAudioFile({
   directUrl,
@@ -75,10 +75,6 @@ export async function downloadAudioFile({
   cleanFilename: string;
 }): Promise<boolean> {
   const tg = getTelegramWebApp();
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const proxyUrl = `${origin}/api/download?url=${encodeURIComponent(
-    directUrl
-  )}&filename=${encodeURIComponent(cleanFilename)}`;
 
   // 1. If running inside Telegram Mini App
   if (isRunningInTelegram() && tg) {
@@ -99,31 +95,6 @@ export async function downloadAudioFile({
       }
     }
 
-    // Try in-memory blob first for desktop / web Telegram
-    try {
-      const res = await fetch(directUrl);
-      if (res.ok) {
-        const blob = await res.blob();
-        if (
-          blob.size >= 50000 &&
-          !blob.type.includes("html") &&
-          !blob.type.includes("json")
-        ) {
-          const blobUrl = window.URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = blobUrl;
-          link.download = cleanFilename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
-          return true;
-        }
-      }
-    } catch {
-      // In-app mobile webview may restrict blob downloads
-    }
-
     // On mobile Telegram Mini App (iOS/Android), openLink hands the direct CDN attachment
     // stream to the phone's native browser (Safari/Chrome) where Content-Disposition attachment downloads the audio.
     if (typeof tg.openLink === "function") {
@@ -132,65 +103,40 @@ export async function downloadAudioFile({
     }
   }
 
-  // 2. Standard Web Browser:
-  // Primary strategy: Direct in-memory blob fetch from CDN (bypasses Vercel 10s execution limits)
+  // 2. Standard Web Browser (Chrome, Safari, Firefox, Edge - Desktop & Mobile):
+  // Direct anchor trigger without target="_blank".
+  // Because the storage server sends "Content-Disposition: attachment; filename=...",
+  // the browser immediately downloads the binary MP3 without navigating away and without ads!
   try {
-    const res = await fetch(directUrl);
-    if (res.ok) {
-      const blob = await res.blob();
-      // STRICT CHECK: Genuine audio files are ALWAYS >= 50KB.
-      // An error page (like Vercel 504 / Cloudflare error) is ~962 bytes.
-      if (
-        blob.size >= 50000 &&
-        !blob.type.includes("html") &&
-        !blob.type.includes("json")
-      ) {
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = cleanFilename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
-        return true;
-      }
-    }
-  } catch (directErr) {
-    console.warn("Direct CDN fetch failed, trying proxy fallback:", directErr);
-  }
-
-  // Secondary strategy: Fetch via same-origin streaming proxy /api/download
-  try {
-    const proxyRes = await fetch(proxyUrl);
-    if (!proxyRes.ok) {
-      throw new Error(`Download proxy error (${proxyRes.status})`);
-    }
-
-    const proxyBlob = await proxyRes.blob();
-    // Validate size to guarantee no 962-byte corrupted files are ever saved
-    if (
-      proxyBlob.size < 50000 ||
-      proxyBlob.type.includes("html") ||
-      proxyBlob.type.includes("json")
-    ) {
-      throw new Error(
-        `Received invalid audio stream (${proxyBlob.size} bytes). Link may have expired.`
-      );
-    }
-
-    const blobUrl = window.URL.createObjectURL(proxyBlob);
     const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = cleanFilename;
+    link.href = directUrl;
+    link.setAttribute("download", cleanFilename);
+    link.style.display = "none";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
     return true;
-  } catch (proxyErr) {
-    console.error("Audio download error:", proxyErr);
-    throw proxyErr;
+  } catch (err) {
+    console.warn("Direct anchor download error, trying iframe fallback:", err);
+  }
+
+  // Fallback: Invisible iframe
+  try {
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = directUrl;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      try {
+        document.body.removeChild(iframe);
+      } catch {}
+    }, 15000);
+    return true;
+  } catch (iframeErr) {
+    console.error("Iframe download error:", iframeErr);
+    window.location.assign(directUrl);
+    return true;
   }
 }
+
 
