@@ -149,8 +149,9 @@ export default function Home() {
             downloadAudioFile({
               directUrl: data.downloadUrl,
               cleanFilename,
-            });
+            }).catch((dlErr) => console.warn("Auto-download failed:", dlErr));
           }
+
         } else {
           setConversionState((prev) => ({
             ...prev,

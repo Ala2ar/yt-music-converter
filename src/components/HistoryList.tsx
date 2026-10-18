@@ -32,12 +32,19 @@ export const HistoryList: React.FC<HistoryListProps> = ({
     e.stopPropagation();
     triggerHaptic("medium");
     const cleanFilename = `${item.metadata.artist} - ${item.metadata.cleanTitle}.${item.format}`;
-    await downloadAudioFile({
-      directUrl: item.downloadUrl,
-      cleanFilename,
-    });
-    triggerHaptic("success");
+    try {
+      await downloadAudioFile({
+        directUrl: item.downloadUrl,
+        cleanFilename,
+      });
+      triggerHaptic("success");
+    } catch (err) {
+      console.warn("History item download failed:", err);
+      triggerHaptic("error");
+      onSelect(item);
+    }
   };
+
 
   return (
     <section id="history" className="w-full max-w-3xl mx-auto mt-12">

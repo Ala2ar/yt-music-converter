@@ -48,6 +48,12 @@ export const TrackCard: React.FC<TrackCardProps> = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (conversionState.downloadUrl) {
+      setDownloadError(null);
+    }
+  }, [conversionState.downloadUrl]);
+
   const handleDownload = async () => {
     if (!conversionState.downloadUrl || isDownloading) return;
 
@@ -77,11 +83,20 @@ export const TrackCard: React.FC<TrackCardProps> = ({
         // Ignore if canvas is unavailable
       }
     } catch (err: unknown) {
-      console.warn("Download error:", err);
+      console.warn("Download error, refreshing audio link:", err);
+      triggerHaptic("error");
+      setDownloadError(
+        "Audio link expired or temporary server issue. Refreshing link automatically..."
+      );
+      // Auto refresh the stream link
+      setTimeout(() => {
+        onStartConversion(selectedFormat);
+      }, 1000);
     } finally {
       setIsDownloading(false);
     }
   };
+
 
   const handleShare = async () => {
     triggerHaptic("light");
@@ -270,7 +285,24 @@ export const TrackCard: React.FC<TrackCardProps> = ({
                 Re-Convert
               </button>
             </div>
+
+            {downloadError && (
+              <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between gap-2 animate-fadeIn">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  {downloadError}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onStartConversion(selectedFormat)}
+                  className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 font-semibold text-[11px] text-amber-100 transition-colors"
+                >
+                  Refresh Now
+                </button>
+              </div>
+            )}
           </div>
+
         ) : (
           <button
             type="button"
