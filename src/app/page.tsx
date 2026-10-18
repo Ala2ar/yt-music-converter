@@ -18,6 +18,8 @@ import { HistoryList, HistoryItem } from "@/components/HistoryList";
 import { Features } from "@/components/Features";
 import { Faq } from "@/components/Faq";
 import { SettingsModal } from "@/components/SettingsModal";
+import { AuthModal, AuthUser } from "@/components/AuthModal";
+import { AdminModal } from "@/components/AdminModal";
 import { VideoMetadata, extractVideoId } from "@/lib/youtube";
 import {
   initTelegramApp,
@@ -46,14 +48,18 @@ export default function Home() {
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [backendUrl, setBackendUrl] = useState("");
   const [autoDownload, setAutoDownload] = useState(false);
   const [telegramUser, setTelegramUser] = useState<string | null>(null);
 
+
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize Telegram WebApp and load preferences
+  // Initialize Telegram WebApp, restore user session, and load preferences
   useEffect(() => {
     try {
       const tg = initTelegramApp();
@@ -63,6 +69,16 @@ export default function Home() {
     } catch {
       // Not in telegram
     }
+
+    // Check active auth session
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          setUser(data.user);
+        }
+      })
+      .catch(() => null);
 
     try {
       const savedHistory = localStorage.getItem("soundrip_history");
@@ -87,6 +103,15 @@ export default function Home() {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, []);
+
+  const handleLogout = async () => {
+    triggerHaptic("medium");
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    setUser(null);
+  };
+
 
 
   const saveHistory = (item: HistoryItem) => {
@@ -316,7 +341,12 @@ export default function Home() {
         onOpenSettings={() => setIsSettingsOpen(true)}
         historyCount={history.length}
         onScrollToSection={scrollToSection}
+        user={user}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+        onLogout={handleLogout}
       />
+
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-16">
         {/* Hero Section */}
@@ -461,6 +491,33 @@ export default function Home() {
         }}
       />
 
+      {/* Auth Modal (Sign In / Register) */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onAuthSuccess={(u) => {
+          setUser(u);
+          if (u.role === "admin") {
+            setIsAdminOpen(true);
+          }
+        }}
+      />
+
+      {/* Admin Modal (Dynamic Backend Switcher & Users) */}
+      <AdminModal
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        currentBackendUrl={backendUrl}
+        onBackendUpdated={(newUrl) => {
+          setBackendUrl(newUrl);
+          try {
+            localStorage.setItem("soundrip_backend_url", newUrl);
+          } catch {
+            // ignore
+          }
+        }}
+      />
     </div>
   );
 }
+

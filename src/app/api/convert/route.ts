@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractVideoId } from "@/lib/youtube";
+import { getSystemConfig } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,13 +26,16 @@ export async function POST(request: NextRequest) {
     const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
     const selectedFormat = format.toLowerCase();
 
-    // 1. Check if user or environment configured a dedicated Private Converter Backend
+    // 1. Check if Admin configured a Global Private Backend, or user/env passed one
+    const systemConfig = await getSystemConfig();
     const backendEngineUrl = (
       body.backendUrl ||
+      systemConfig.activeBackendUrl ||
       process.env.CONVERTER_BACKEND_URL ||
       process.env.NEXT_PUBLIC_CONVERTER_BACKEND_URL ||
       ""
     ).replace(/\/+$/, "");
+
 
     if (backendEngineUrl) {
       try {
