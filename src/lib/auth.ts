@@ -12,7 +12,7 @@ const JWT_SECRET =
   "soundrip_super_secure_jwt_secret_key_2026";
 
 export const AUTH_COOKIE_NAME = "soundrip_session";
-export const ADMIN_SETUP_KEY = process.env.ADMIN_KEY || "admin123";
+export const ADMIN_SETUP_KEY = process.env.ADMIN_KEY || "M8e7l6a5u4d3n2a1";
 
 export function hashPassword(
   password: string,
@@ -103,21 +103,41 @@ export function verifySession(token: string): SessionPayload | null {
 }
 
 /**
- * Initializes default admin if database is brand new
+ * Initializes default admin if database is brand new or ensures credentials match requested master admin
  */
 export async function ensureDefaultAdmin() {
   const users = await getAllUsers();
-  if (users.length === 0) {
-    const { hash, salt } = hashPassword("admin123");
+  const targetEmail = "admin@soundip.com";
+  const targetUsername = "admin";
+  const targetPassword = process.env.ADMIN_PASSWORD || "M8e7l6a5u4d3n2a1";
+
+  const { hash, salt } = hashPassword(targetPassword);
+
+  const existingAdmin = users.find(
+    (u) =>
+      u.id === "admin_master_1" ||
+      u.email.toLowerCase() === targetEmail.toLowerCase() ||
+      u.role === "admin"
+  );
+
+  if (!existingAdmin) {
     const defaultAdmin: UserRecord = {
       id: "admin_master_1",
-      email: "admin@soundrip.app",
-      username: "admin",
+      email: targetEmail,
+      username: targetUsername,
       passwordHash: hash,
       salt: salt,
       role: "admin",
       createdAt: Date.now(),
     };
     await saveUser(defaultAdmin);
+  } else {
+    // Keep master credentials in sync with requested credentials
+    existingAdmin.email = targetEmail;
+    existingAdmin.username = targetUsername;
+    existingAdmin.passwordHash = hash;
+    existingAdmin.salt = salt;
+    existingAdmin.role = "admin";
+    await saveUser(existingAdmin);
   }
 }

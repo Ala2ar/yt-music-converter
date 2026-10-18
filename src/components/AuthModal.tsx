@@ -145,7 +145,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   required
                   value={emailOrUsername}
                   onChange={(e) => setEmailOrUsername(e.target.value)}
-                  placeholder="admin or user@example.com"
+                  placeholder="Enter username or email"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
                 />
               </div>
@@ -224,10 +224,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     Admin Passkey
                   </label>
                   <input
-                    type="text"
+                    type="password"
                     value={adminKey}
                     onChange={(e) => setAdminKey(e.target.value)}
-                    placeholder="Default key: admin123"
+                    placeholder="Enter passkey if authorized"
                     className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-purple-500/30 text-white placeholder-gray-500 text-xs focus:outline-none focus:border-purple-400 font-mono"
                   />
                   <p className="text-[10px] text-gray-400">
@@ -261,19 +261,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
           </button>
         </form>
-
-        {/* Quick Admin Note */}
-        {tab === "login" && (
-          <div className="mt-4 p-2.5 rounded-xl bg-white/5 border border-white/5 text-[11px] text-gray-400 flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-purple-400" />
-              Admin Credentials:
-            </span>
-            <span className="font-mono text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
-              admin / admin123
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
