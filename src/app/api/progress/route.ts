@@ -6,16 +6,11 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get("id");
     const progressUrlParam = searchParams.get("progressUrl");
 
-    let progressEndpoint = progressUrlParam;
-
-    if (!progressEndpoint && id) {
-      // Default loader.to progress server
-      progressEndpoint = `https://lto2.affadaffa.com/api/progress?id=${id}`;
-    }
+    const progressEndpoint = progressUrlParam;
 
     if (!progressEndpoint) {
       return NextResponse.json(
-        { error: "Conversion Job ID or Progress URL is required" },
+        { error: "Progress URL is required" },
         { status: 400 }
       );
     }
@@ -24,7 +19,6 @@ export async function GET(request: NextRequest) {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Referer: "https://loader.to/",
       },
     });
 
@@ -37,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    // loader.to returns progress scaled to 1000 or 100
+    // Normalize progress scale if scaled to 1000
     let numericProgress = 0;
     if (typeof data.progress === "number") {
       numericProgress = data.progress > 100 ? Math.round(data.progress / 10) : data.progress;

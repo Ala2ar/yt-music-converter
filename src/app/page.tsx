@@ -406,6 +406,13 @@ export default function Home() {
                 startConversion(metadata.url, metadata, fmt)
               }
               conversionState={conversionState}
+              onOpenAdmin={() => {
+                if (user?.role === "admin") {
+                  setIsAdminOpen(true);
+                } else {
+                  setIsAuthOpen(true);
+                }
+              }}
             />
           </div>
         )}

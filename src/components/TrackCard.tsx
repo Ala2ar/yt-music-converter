@@ -35,6 +35,7 @@ interface TrackCardProps {
     downloadUrl: string | null;
     error: string | null;
   };
+  onOpenAdmin?: () => void;
 }
 
 export const TrackCard: React.FC<TrackCardProps> = ({
@@ -43,6 +44,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
   onFormatChange,
   onStartConversion,
   conversionState,
+  onOpenAdmin,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -319,9 +321,20 @@ export const TrackCard: React.FC<TrackCardProps> = ({
         )}
 
         {conversionState.error && (
-          <div className="mt-3 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
-            <span>{conversionState.error}</span>
+          <div className="mt-3 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
+              <span>{conversionState.error}</span>
+            </div>
+            {onOpenAdmin && conversionState.error.toLowerCase().includes("backend") && (
+              <button
+                type="button"
+                onClick={onOpenAdmin}
+                className="px-3 py-1.5 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-200 font-semibold text-[11px] whitespace-nowrap transition-colors self-start sm:self-auto"
+              >
+                Open Admin Panel
+              </button>
+            )}
           </div>
         )}
       </div>

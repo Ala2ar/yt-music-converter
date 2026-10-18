@@ -39,6 +39,9 @@ export async function POST(request: NextRequest) {
 
     if (backendEngineUrl) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for audio conversion
+
         const backendRes = await fetch(`${backendEngineUrl}/convert`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -47,7 +50,9 @@ export async function POST(request: NextRequest) {
             url: youtubeUrl,
             format: selectedFormat,
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         if (backendRes.ok) {
           const backendData = await backendRes.json();
@@ -62,9 +67,26 @@ export async function POST(request: NextRequest) {
               progress: 100,
             });
           }
+        } else {
+          const errData = await backendRes.json().catch(() => ({}));
+          return NextResponse.json(
+            {
+              error:
+                errData.detail ||
+                `Backend conversion service returned status ${backendRes.status}`,
+            },
+            { status: 502 }
+          );
         }
-      } catch (backendErr) {
-        console.warn("Private backend engine error:", backendErr);
+      } catch (backendErr: unknown) {
+        const msg =
+          backendErr instanceof Error ? backendErr.message : "Service unreachable";
+        return NextResponse.json(
+          {
+            error: `Failed to connect to backend engine (${backendEngineUrl}): ${msg}. If using Render free tier, the service may be spinning up; please wait 30 seconds and retry.`,
+          },
+          { status: 504 }
+        );
       }
     }
 
@@ -99,62 +121,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. High-speed universal conversion engine
-
-    const apiUrl = `https://loader.to/ajax/download.php?format=${selectedFormat}&url=${encodeURIComponent(
-      youtubeUrl
-    )}`;
-
-    const response = await fetch(apiUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Referer: "https://loader.to/",
+    // 3. If neither private backend nor RapidAPI is configured
+    return NextResponse.json(
+      {
+        error:
+          "No conversion backend engine is connected. Please sign in as Admin (admin@soundip.com) and click 'Admin Engine' to set your Render backend URL.",
+        needsBackend: true,
       },
-    });
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: `Converter server responded with status ${response.status}` },
-        { status: 502 }
-      );
-    }
-
-    const data = await response.json();
-
-    if (!data.success && !data.id) {
-      return NextResponse.json(
-        { error: data.text || "Failed to initialize conversion" },
-        { status: 500 }
-      );
-    }
-
-    // If conversion is already cached and download URL is immediately available
-    if (data.download_url) {
-      return NextResponse.json({
-        success: true,
-        completed: true,
-        jobId: data.id,
-        downloadUrl: data.download_url,
-        title: data.title,
-        format: selectedFormat,
-        progress: 100,
-      });
-    }
-
-    // Return the job info and progress URL for polling
-    return NextResponse.json({
-      success: true,
-      completed: false,
-      jobId: data.id,
-      progressUrl: data.progress_url,
-      title: data.title,
-      format: selectedFormat,
-      progress: 0,
-      thumbnail: data.info?.image || data.thumbnail_url,
-    });
+      { status: 503 }
+    );
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Conversion request failed";
+    const message =
+      error instanceof Error ? error.message : "Conversion request failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
