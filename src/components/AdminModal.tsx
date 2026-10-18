@@ -125,11 +125,26 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     setSaveSuccess(false);
     triggerHaptic("medium");
 
+    const clean = backendUrl.trim();
+    if (clean.includes("your-service") || clean.includes("your-user-space")) {
+      triggerHaptic("error");
+      alert('Please replace "your-service" with the actual name of your deployed Render service (e.g. https://soundrip-backend.onrender.com).');
+      setIsSaving(false);
+      return;
+    }
+
+    if (clean.includes("vercel.app")) {
+      triggerHaptic("error");
+      alert('You entered your Vercel frontend URL. The backend switcher requires your Render or Docker Python microservice URL (e.g. https://soundrip-backend.onrender.com).');
+      setIsSaving(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/admin/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ activeBackendUrl: backendUrl.trim() }),
+        body: JSON.stringify({ activeBackendUrl: clean }),
       });
 
       const data = await res.json();
@@ -137,7 +152,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
       triggerHaptic("success");
       setSaveSuccess(true);
-      onBackendUpdated(backendUrl.trim());
+      onBackendUpdated(clean);
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (err) {
       triggerHaptic("error");
@@ -330,6 +345,25 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                 )}
               </button>
             </div>
+
+            {/* In-line helper alerts */}
+            {backendUrl.includes("your-service") && (
+              <p className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <span>⚠️</span>
+                <span>
+                  Replace <code className="bg-amber-500/20 px-1 rounded text-amber-200">your-service</code> with the actual name of your Render web service (e.g. <code className="text-white">soundrip-backend</code>).
+                </span>
+              </p>
+            )}
+
+            {backendUrl.includes("vercel.app") && (
+              <p className="text-[11px] text-rose-300 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <span>❌</span>
+                <span>
+                  This is your Vercel frontend URL! Enter your Python/Docker backend URL (from Render, Railway, or localhost).
+                </span>
+              </p>
+            )}
 
             {/* Test Connection Result Alert */}
             {testResult && (

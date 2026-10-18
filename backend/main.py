@@ -82,10 +82,12 @@ def root():
     }
 
 @app.get("/health")
+@app.get("/api/health")
 def health():
     return {"status": "ok", "timestamp": time.time()}
 
 @app.get("/info")
+@app.get("/api/info")
 def get_info(url: Optional[str] = None, id: Optional[str] = None):
     target = url or (f"https://www.youtube.com/watch?v={id}" if id else None)
     if not target:
@@ -115,6 +117,9 @@ def get_info(url: Optional[str] = None, id: Optional[str] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/convert")
+@app.post("/convert/")
+@app.post("/api/convert")
+@app.post("/api/convert/")
 def convert_audio(req: ConvertRequest, request: Request, background_tasks: BackgroundTasks):
     video_id = req.id
     raw_url = req.url
@@ -201,6 +206,7 @@ def convert_audio(req: ConvertRequest, request: Request, background_tasks: Backg
         raise HTTPException(status_code=500, detail=f"Conversion error: {str(e)}")
 
 @app.get("/download/{filename}")
+@app.get("/api/download/{filename}")
 def download_file(filename: str, title: Optional[str] = None):
     # Sanitize filename
     safe_filename = os.path.basename(filename)
