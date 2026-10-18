@@ -27,12 +27,12 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now();
     try {
       const res = await fetch(`${cleanUrl}/health`, {
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(12000),
       }).catch(() => null);
 
       const rootRes = !res?.ok
         ? await fetch(`${cleanUrl}/`, {
-            signal: AbortSignal.timeout(6000),
+            signal: AbortSignal.timeout(12000),
           }).catch(() => null)
         : res;
 
@@ -46,6 +46,24 @@ export async function POST(request: NextRequest) {
           latencyMs,
           data,
           message: `Backend is Online (${latencyMs}ms)`,
+        });
+      }
+
+      if (rootRes?.status === 503) {
+        return NextResponse.json({
+          online: false,
+          latencyMs,
+          status: 503,
+          message: "Render is spinning up / deploying (Status 503). Wait 15s and ping again!",
+        });
+      }
+
+      if (rootRes?.status === 404) {
+        return NextResponse.json({
+          online: false,
+          latencyMs,
+          status: 404,
+          message: "Endpoint not found (404). Check your Render service URL.",
         });
       }
 
