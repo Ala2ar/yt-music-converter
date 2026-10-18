@@ -103,6 +103,21 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        // Auto-retry once on 503 (Render cold start / sleeping instance waking up)
+        if (backendRes.status === 503) {
+          await new Promise((resolve) => setTimeout(resolve, 3500));
+          backendRes = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: videoId,
+              url: youtubeUrl,
+              format: selectedFormat,
+            }),
+            signal: controller.signal,
+          });
+        }
+
         clearTimeout(timeoutId);
 
         if (backendRes.ok) {
@@ -121,9 +136,12 @@ export async function POST(request: NextRequest) {
         } else {
           const errData = await backendRes.json().catch(() => ({}));
           const is404 = backendRes.status === 404;
+          const is503 = backendRes.status === 503;
           return NextResponse.json(
             {
-              error: is404
+              error: is503
+                ? `Render backend is waking up from sleep or deploying (Status 503). Free tier instances take ~30-45 seconds to spin up on first request. Please wait 15 seconds and try again!`
+                : is404
                 ? `Backend at ${backendEngineUrl} returned 404 Not Found. Make sure your Render service deployed successfully with Root Directory set to 'backend' and check your service URL in the Admin Panel.`
                 : errData.detail ||
                   `Backend conversion service returned status ${backendRes.status}`,

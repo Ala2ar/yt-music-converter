@@ -21,5 +21,5 @@ COPY . .
 ENV PORT=8080
 EXPOSE 8080
 
-# Run FastAPI with Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Run FastAPI with dynamic port binding for Render, Railway, etc.
+CMD ["sh", "-c", "exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
